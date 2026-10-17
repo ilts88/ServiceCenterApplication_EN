@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Admin News page</title>
+    <link rel="stylesheet" type="text/css" href="/adminpage/admin_frame.css"/>
+    <style>
+        .rules {
+            height: 100%;
+        }
+
+        .text_wrapper {
+            max-height: 70%;
+            overflow: auto;
+            border-bottom: 1px solid grey;
+            padding-left: 3px;
+            background-color: white;
+        }
+
+            .text_wrapper p {
+                margin: revert;
+                padding: revert;
+                border: revert;
+            }
+
+        .selector {
+            margin-left:10%;
+            margin-right:10%;
+            width:80%;
+        }
+            
+        .selector input[type="button"]{
+            float:right;
+            
+        }
+        .selector_wrapper {
+            padding-top: 10px;
+            padding-bottom: 10px;
+            width: 75%;
+            float: left;
+            border-right: 1px solid grey;
+            border-bottom: 1px solid grey;
+        }
+        .createbutton_wrapper {
+            padding-top: 10px;
+            padding-bottom: 10px;
+            width: 25%;
+            margin-left: 75%;
+            border-bottom: 1px solid grey;
+        }
+        .createbutton_wrapper button{
+            width:60%;
+            margin-left:20%;
+        }
+        .editpanel {
+            position: absolute;
+            top: 10%;
+            left: 10%;
+            width: 80%;
+            z-index: 1;
+            min-width: 1000px;
+            background-color: white;
+            box-shadow: 5px 5px 50px 5px #808080,-5px -5px 50px 5px #808080;
+        }
+
+            .editpanel div {
+                text-align: center;
+                width: 33%;
+                margin-left: 30%;
+                margin-top: 10px;
+                padding: 3px;
+                border: 3px solid blue;
+            }
+
+            .editpanel button:first-child {
+                margin-left: 35%;
+            }
+
+            .editpanel button {
+                margin: 10px;
+                width: 10%;
+            }
+        .newstable_wrapper {
+            height: 92%;
+            overflow: auto;
+        }
+
+        .newstable {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .newstable tr {
+                border-bottom: 2px solid black;
+            }
+
+            .newstable td,th {
+                border-right: 1px solid grey;
+                padding-top: 3px;
+                padding-bottom: 3px;
+            }
+
+                .newstable td:last-of-type {
+                    border-right: none;
+                }
+
+                .newstable th:last-of-type{
+                    border-right: none;
+                }
+
+            .newstable button {
+                margin: 3px;
+                width:75px;
+            }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+        </div>
+    </div>
+    <div class="wrapper">
+    <div class="menubar">
+        <ul class="navigation">
+            <li><a href="/adminpage">Requests management panel</a></li>
+            <li><a href="/adminpage/newspage">News management panel</a></li>
+        </ul>
+    </div>
+    <div class="rules">
+        <div class="text_wrapper">
+            <p>You are now in the news management system. To create a new publication, click the "Create" button. In the window that opens, you will see the article creation interface. To edit existing publications, you can click the "edit" button next to the desired article. You can also delete any article by clicking the "delete" button next to it.</p>
+            <p>If there are any changes to the company's operations (for example, during holidays), it is necessary to publish information about them in a timely manner, clearly stating the changes. Information about the system's operation should also be published, and, in the event of maintenance, periods when the system will be unavailable should be announced.</p>
+            <p>This section should contain links to all TSY financial reports. It is also recommended to publish information about company events, as well as TSY representatives' participation in forums, conferences, etc.</p>
+        </div>
+    </div>
+    <div class="content">
+
+        <div class="selector_wrapper">
+            <form class="selector" id="selector">
+
+                <span>Sort by:</span>
+                <input type="radio" name="order_by" id="ASC" value="ASC" checked />
+                <span>ascending</span>
+                <input type="radio" name="order_by" id="DESC" value="DESC" />
+                <span>descending</span>
+                <input type="button" value="Apply" id="submitbutton" />
+            </form>
+        </div>
+        <div class="createbutton_wrapper">
+            <button id="createnew">Create</button>
+        </div>
+        <div class="newstable_wrapper">
+            <table class="newstable">
+                <thead>
+                    <tr>
+                        <th>title</th>
+                        <th>article text</th>
+                        <th>created at</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody"></tbody>
+            </table>
+
+        </div>
+    </div>
+    </div>
+    <script>
+        let current_article = undefined;                             //creating and initializing variables of the current open article and the current sorting option
+        let current_order_by_param = "ASC";
+        let submitbutton = document.getElementById("submitbutton");        //getting elements needed for further work by id
+        let createnew = document.getElementById("createnew");
+        let tbody = document.getElementById("tbody");
+
+        function GetAllNews(e) {                               //function to get all publications
+            while (tbody.firstChild != undefined)
+                tbody.firstChild.remove();                     //clearing the publication table in case of function called again
+
+            let order_by_param = selector.order_by.value;      //getting the sorting parameter selected by the user
+            current_order_by_param = order_by_param;
+            
+
+            fetch("/adminpage/getallnews?order_by=" + order_by_param, { method: "GET", headers: { "Accept": "application/json" } })      //sending a request to the server to get publications with the sorting parameter specified by the user
+                .then(response => {
+                    if (response.ok)
+                        return response.json();
+                    else
+                        return response.json().then(errormessage => { throw errormessage; });
+                })
+                .then(result => {
+                    for (article of result) {              //each received article is added to the table
+                        let tr = CreateRow(article);       //call the function to create a row element based on the article
+                        tbody.appendChild(tr);             //adding the created element to the table
+                    }
+                        
+                })
+                .catch(error => {
+                    alert("An error occurred while executing your request, information about error: " + error);     //display an error message to the user in case of unsuccessful request sending
+                })
+        }
+        function CreateRow(article) {                   //function to create a row element based on the article
+            let tr = document.createElement("tr");      //creating a row element
+            tr.setAttribute("id", article.id);          //setting the id for row element for further work with the created article
+            let td1 = document.createElement("td");     //creating row cells
+            let td2 = document.createElement("td");
+            let td3 = document.createElement("td");
+
+            td1.textContent = GetTableTitle(article.title);            //inserting article data into row cells
+            td2.textContent = GetTableContent(article.content);
+            td3.textContent = article.created_at;
+
+            tr.appendChild(td1);                                       //adding cells to the table row
+            tr.appendChild(td2);
+            tr.appendChild(td3);
+
+            let openbutton = document.createElement("button");                       //creating a button to open an article and adding the function to open an article by id
+            openbutton.addEventListener("click", () => OpenElement(article.id));
+            openbutton.textContent = "edit";
+
+            let deletebutton = document.createElement("button");                         //creating a button to delete an article and adding the function to delete an article by id
+            deletebutton.addEventListener("click", () => DeleteArticle(article.id));
+            deletebutton.textContent = "delete";
+
+            tr.appendChild(openbutton);
+            tr.appendChild(deletebutton);
+
+            return tr;
+        }
+        function CreateEditPanel() {                               //function to create article editing panel
+            let EditPanel = document.createElement("div");
+            EditPanel.setAttribute("id", "editpanel");             //creating an article editing panel element and setting the corresponding id and class to it
+            EditPanel.setAttribute("class", "editpanel");
+            
+            let form = document.createElement("form");             //creating internal elements of the article editing panel
+
+            let h3_1 = document.createElement("h3");
+            let f_p1 = document.createElement("p");
+            let textarea1 = document.createElement("textarea");
+
+            let h3_2 = document.createElement("h3");
+            let f_p2 = document.createElement("p");
+            let textarea2 = document.createElement("textarea");
+
+            let f_p3 = document.createElement("p");
+            let save_button = document.createElement("button");
+            let reset_button = document.createElement("button");
+
+            let div1 = document.createElement("div");
+            let div2 = document.createElement("div");
+
+            form.setAttribute("id", "editform");                //setting the id for the article editing interface
+
+            h3_1.textContent = "Title: ";                   //creating labels and setting attributes for elements of the article editing interface
+
+            h3_2.textContent = "Article text: ";
+            
+            textarea1.setAttribute("name", "article_title");
+            textarea1.setAttribute("rows", "3");
+            textarea1.setAttribute("cols", "30");
+            textarea1.setAttribute("maxlength", "80");
+            textarea1.setAttribute("required", "");
+
+            textarea2.setAttribute("name", "content");
+            textarea2.setAttribute("rows", "15");
+            textarea2.setAttribute("cols", "30");
+            textarea2.setAttribute("maxlength", "800");
+            textarea2.setAttribute("required", "");
+
+            save_button.textContent = "Save";
+            reset_button.textContent = "Cancel";
+
+            if (current_article === undefined)                            //if the variable of the current open article is not defined, the function of creating a new article is added to the "save" button
+                save_button.addEventListener("click", CreateArticle);
+            else {                                                        //otherwise, the title and content of the current open article are inserted into the fields for changing the title and content of the article
+                textarea1.value = current_article.title;
+                textarea2.value = current_article.content;
+                save_button.addEventListener("click", UpdateArticle);     //An update article function is added to the 'Save' button
+            }
+ 
+            reset_button.addEventListener("click", ResetChanges);         //adding a reset function to the "Cancel" button
+
+            f_p1.appendChild(textarea1);                              //adding all created elements to the article editing panel
+            f_p2.appendChild(textarea2);
+            f_p3.appendChild(save_button);
+            f_p3.appendChild(reset_button);
+
+            div1.appendChild(h3_1);
+            div1.appendChild(f_p1);
+            
+            div2.appendChild(h3_2);
+            div2.appendChild(f_p2);
+
+            form.appendChild(div1);
+            form.appendChild(div2);
+            form.appendChild(f_p3);
+
+
+            EditPanel.appendChild(form);
+            document.body.appendChild(EditPanel);                    //adding the article editing panel to the page
+        }
+        function CreateArticle(e) {                                  //function for creating a new article
+            e.preventDefault();
+            let editform = document.getElementById("editform");       //getting the article editing interface element by id
+
+            if (editform.checkValidity()) {                        //checking the correctness of filling in the interface form
+                let title = editform.article_title.value;
+                let content = editform.content.value;              //getting the entered title and text of the article
+                let article = {
+                    id:0,
+                    title,                                         //creating an article object
+                    content,
+                    created_at: new Date()
+                }
+                fetch("/adminpage/createarticle", { method: "POST", body: JSON.stringify(article), headers: { "Accept": "application/json", "Content-type": "application/json" } })             //sending the created article to the server
+                    .then(response => {
+                        if (response.ok)
+                            return response.json();
+                        else
+                            return response.json().then(errormessage => { throw errormessage; });
+                    })
+                    .then(result => {                          //if the request is successfully processed, the server returns the created article
+                        
+                        let tr = CreateRow(result);                  //creating a row element based on the received article
+                        if (current_order_by_param === "ASC")
+                            tbody.appendChild(tr);                       //if sorting in ascending order is selected, the created article is added to the end of the publications table
+                        else if (current_order_by_param==="DESC")
+                        {
+                            let firstChild = tbody.firstChild;
+                            if (firstChild != undefined) {
+                                tbody.insertBefore(tr, firstChild)          //if sorting in descending order is selected, and the publication table already contains articles, the created article is added to the beginning of the table
+                            }
+                            else {
+                                tbody.appendChild(tr);                  //if sorting in descending order is selected, and the publication table does not contain articles, the created article is added to the end of the table
+                            }
+                        }
+                        
+                        let editpanel = document.getElementById("editpanel");           //getting the article editing panel element by ID and remove it
+                        document.body.removeChild(editpanel);
+                    })
+                    .catch(error => {
+                        alert("An error occurred while executing your request, information about error: " + error);           //display an error message to the user in case of unsuccessful request sending
+                    })
+            }
+            else {
+                editform.reportValidity();                   //displaying a message to the user about an incorrectly filled in interface form
+            }
+        }
+        function ResetChanges(e) {                           //function for resetting changes made in the article editing panel
+            e.preventDefault();
+            current_article = undefined;                                   //resetting the variable of the current open article
+            let editpanel = document.getElementById("editpanel");
+            document.body.removeChild(editpanel);                          //getting the article editing panel element by ID and remove it
+        }
+        function OpenElement(id) {                                          //function for opening an article by id
+            fetch("/adminpage/getarticlebyid?id=" + id, { method: "GET", headers: { "Accept": "application/json" } })       //sending a request to the server to get an article with the selected id
+                .then(response => {
+                    if (response.ok)
+                        return response.json();
+                    else
+                        return response.json().then(errormessage => { throw errormessage; });
+                })
+                .then(result => {
+                    current_article = result;                    //assigning data of received article to the variable of current open article for further work
+                    CreateEditPanel();                           //call the function to create the article editing panel
+                })
+                .catch(error => {
+                    alert("An error occurred while executing your request, information about error: " + error);            //display an error message to the user in case of unsuccessful request sending
+                })
+        }
+        function UpdateArticle(e) {                             //function for updating article
+            e.preventDefault();
+            let editform = document.getElementById("editform");        //getting the article editing interface element by id
+
+            if (editform.checkValidity()) {                            //checking the correctness of filling in the interface form
+                let title = editform.article_title.value;
+                let content = editform.content.value;                  //getting the entered title and text of the article
+
+                current_article.title = title;                         //assigning new title and content values ​​to the properties of the current open article object
+                current_article.content = content;
+
+                fetch("/adminpage/updatearticle", { method: "PUT", body: JSON.stringify(current_article), headers: { "Accept": "application/json", "Content-type": "application/json" } })          //sending a request to the server to update the article with the data of the current open article
+                    .then(response => {
+                        if (response.ok)
+                            return response.json();
+                        else
+                            return response.json().then(errormessage => { throw errormessage; });
+                    })
+                    .then(result => {                                              //if the request is completed successfully, server returns the updated article data
+                        let article = document.getElementById(result.id);          //getting the updated article row element by id
+                        let td1 = article.getElementsByTagName("td")[0];           //getting elements of title and content cells by tag name and index
+                        let td2 = article.getElementsByTagName("td")[1];
+
+                        td1.textContent = GetTableTitle(result.title);             //inserting updated article data into the row cells
+                        td2.textContent = GetTableContent(result.content);
+
+                        current_article = undefined;                               //reset the variable of the current open article
+                        let editpanel = document.getElementById("editpanel");
+                        document.body.removeChild(editpanel);                      //getting the article editing panel element by ID and remove it
+
+                    })
+                    .catch(error => {
+                        alert("An error occurred while executing your request, information about error: " + error);         //display an error message to the user in case of unsuccessful request sending
+                    })
+            }
+            else {
+                editform.reportValidity();                    //displaying a message to the user about an incorrectly filled in interface form
+            }
+        }
+        function DeleteArticle(id) {                                                    //function to delete an article by id
+            const confirmation = confirm("Are you sure you want to delete article?");      //displaying a message to the user asking whether to delete the article and receiving confirmation or refusal from the user
+            if (confirmation === true) {                                                  //if confirmed, deletion is performed
+                fetch("/adminpage/deletearticle?id=" + id, { method: "DELETE", headers: { "Accept": "application/json" } })          //sending a request to the server to delete an article with the specified id
+                    .then(response => {
+                        if (response.ok)
+                            return response.json();
+                        else
+                            return response.json().then(errormessage => { throw errormessage; });
+                    })
+                    .then(result_id => {                                       //in case of successful deletion, the server sends the id of the deleted article
+                   
+                        let article = document.getElementById(result_id);      //getting a deleted article row element by id    
+                        tbody.removeChild(article);                            //removing article from the table
+                    })
+                    .catch(error => {
+                        alert("An error occurred while executing your request, information about error: " + error);       //display an error message to the user in case of unsuccessful request sending
+                    })
+            }
+
+        }
+        function GetTableTitle(title) {                      //function for formatting the article title for placing in the table
+            if (title.length > 25)
+                return title.substring(0, 24) + "...";       //the article title has a large allowable length, so only the beginning of it is placed in the table, and the rest of it is truncated
+            else
+                return title;
+        }
+        function GetTableContent(content) {                  //function for formatting the article text for placing in the table
+            if (content.length > 75)
+                return content.substring(0, 74) + "...";     //the article text has a large allowable length, so only the beginning of it is placed in the table, and the rest of it is truncated
+            else
+                return content;
+        }
+        submitbutton.addEventListener("click", GetAllNews);          //adding a function to the "Apply" button to get all publications
+        createnew.addEventListener("click", CreateEditPanel);        //adding a function to the "Create" button to create the article editing panel
+        GetAllNews();                                                //call the function to get all publications to display publications to the user when the page is opened
+    </script>
+</body>
+</html>

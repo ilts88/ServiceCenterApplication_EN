@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Status page</title>
+    <link rel="stylesheet" type="text/css" href="frame.css" />
+    <link rel="stylesheet" type="text/css" href="warranty_promotion_animation.css" />
+    <style>
+        .content p {
+            width: 90%;
+            margin-right: 5%;
+            margin-left: 5%;
+            margin-top: 50px;
+            border: 3px solid blue;
+            padding-right: 3%;
+            padding-left: 3%;
+            padding-top: 25px;
+            padding-bottom: 25px;
+        }
+
+        .requestform span {
+            width: 17%;
+            display: inline-block;
+        }
+
+        .requestform input[type="text"] {
+            width: 65%;
+        }
+
+        .requestform button {
+            width: 15%;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+        </div>
+    </div>
+    <div class="wrapper">
+    <div class="menubar">
+        <ul class="navigation">
+            <li><a href="mainpage">Main page</a></li>
+            <li><a href="requestpage">Request for repair</a></li>
+            <li><a href="statuspage">Request status</a></li>
+            <li><a href="newspage">News</a></li>
+            <li><a href="aboutpage">About us</a></li>
+        </ul>
+    </div>
+    <div class="slidebar">
+        <div>
+        </div>
+    </div>
+    <div class="content">
+        <div class="requestform">
+            <form id="idform">
+                <p>
+                    <span>Enter request id:</span>
+                    <input type="text" name="requestid" pattern="\d{9}"/>
+                    <button type="submit" id="submitbutton">Submit</button>
+                </p>
+            </form>
+        </div>
+        <div id="statusinfo" class="statusinfo"></div>
+    </div>
+    </div>
+    <script>
+        let statusinfo = document.getElementById("statusinfo");              //getting elements needed for further work by id
+        let idform = document.getElementById("idform");
+        let submitbutton = document.getElementById("submitbutton");
+
+        function GetRequest(e) {                         //function for getting information about a repair request
+            e.preventDefault();
+            if (idform.checkValidity()) {                //checking the correctness of the entered data in the request id input form
+                let id = idform.requestid.value;         //getting the id entered by user
+                fetch("/getrequeststatus?id=" + id, { method: "GET", headers: { "Accept": "application/json" } })    //sending a request to the server to get information about a repair request with the specified id
+                    .then(response => {
+                        if (response.status === 204) {           //if the server has sent a status code indicating that there is no request with the specified id, the user is shown a corresponding message
+                            alert("Request wasn't found");
+                            ClearStatusInfo();                   //call the function to delete the currently displayed repair request status information
+                        }
+                        else if (response.ok)
+                            return response.json().then(result => {    //if the server has transmitted information about the status of the repair request, the function for displaying the received information to the user is called   
+
+                                ShowRequestStatusInfo(result);
+                            });
+                        else
+                            return response.json().then(errormessage => { throw errormessage; });
+                    })
+                    .catch(error => {
+                        alert("An error occurred while executing your request, information about error: " + error);           //display an error message to the user in case of unsuccessful request sending
+                        ClearStatusInfo();                            //call the function to delete the currently displayed repair request status information
+                    })
+            }
+            else {
+                idform.reportValidity();            //displaying a message to the user about an incorrectly filled in id input form
+            }
+        }
+        function ShowRequestStatusInfo(request) {              //function for displaying information about the status of a repair request
+                ClearStatusInfo();                             //call the function to delete the currently displayed repair request status information
+                               
+                let p1 = document.createElement("p");          //creating elements to display the status of a repair request
+                let span1 = document.createElement("span");
+                p1.textContent = "Request status: ";
+                if (request.status === "processing") {                  //the repair request status is being decoded for display to the user
+                    span1.textContent = "Awaiting repair appointment";   //the decoded information is entered into the request status element
+                    span1.setAttribute("style", "color:blue");          //depending on its status, the element is painted in a certain color
+                }
+                if (request.status === "appointed") {
+                    span1.textContent = "Repair appointed";
+                    span1.setAttribute("style", "color:blue");
+                }
+                if (request.status === "rejected") {
+                    span1.textContent = "Request rejected";
+                    span1.setAttribute("style", "color:red");
+                }
+                if (request.status === "resolved") {
+                    span1.textContent = "Repair completed";
+                    span1.setAttribute("style", "color:green");
+                }
+
+                p1.appendChild(span1);
+                statusinfo.appendChild(p1);                     //adding a request status element to the request information panel
+
+                if (request.service_comment!=null)                 //checking the received information for the presence of a service center comment
+                    if (request.service_comment.length > 0) {
+                    p2 = document.createElement("p");              //if the received information contains a service center comment, an element is created to display the service center comment
+                    p2.textContent = "Service center comment: " + request.service_comment;       //entering a service center comment into the element
+                    statusinfo.appendChild(p2);                    //the created element is added to the request information panel
+                }
+            
+            
+        }
+        function ClearStatusInfo() {                          //function to delete the currently displayed information about the repair request status
+            while (statusinfo.firstChild != undefined) {
+                statusinfo.firstChild.remove();
+            }
+        }
+        submitbutton.addEventListener("click", GetRequest);       //adding a function to the "Submit" button to receive information about the repair request
+    </script>
+</body>
+</html>

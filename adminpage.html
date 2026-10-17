@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Admin page</title>
+    <link rel="stylesheet" type="text/css" href="/adminpage/admin_frame.css" />
+    <style>
+        .rules{
+            height:100%;
+        }
+        .text_wrapper {
+            max-height: 70%;
+            overflow: auto;
+            border-bottom: 1px solid grey;
+            padding-left: 3px;
+            background-color: white;
+        }
+            .text_wrapper p {
+                margin: revert;
+                padding: revert;
+                border: revert;
+            }
+        .selector {
+            border-bottom: 1px solid grey;
+        }
+
+            .selector p {
+                margin-left: 5%;
+                padding-top: 10px;
+                padding-bottom: 10px;
+            }
+
+        .selector_wrapper {
+            float: right;
+            margin-right: 5%;
+        }
+
+        .editpanel {
+            position: absolute;
+            top: 10%;
+            left: 10%;
+            width: 80%;
+            z-index: 1;
+            min-width: 1000px;
+            background-color: white;
+            box-shadow: 5px 5px 50px 5px #808080,-5px -5px 50px 5px #808080;
+        }
+
+            .editpanel table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+
+            .editpanel tr {
+                border-bottom: 2px solid black;
+            }
+
+            .editpanel td {
+                width: 50%;
+            }
+
+                .editpanel td:first-child {
+                    border-right: 1px solid grey;
+                }
+
+            .editpanel > p {
+                border-bottom: 2px solid black;
+                max-height:60px;
+                overflow:auto;
+            }
+
+            .editpanel div {
+                text-align: center;
+                width: 33%;
+                margin-left: 30%;
+                margin-top: 10px;
+                padding: 3px;
+                border: 3px solid blue;
+            }
+
+            .editpanel button:first-child {
+                margin-left: 35%;
+            }
+
+            .editpanel button {
+                margin: 10px;
+                width: 10%;
+            }
+
+        .requeststable_wrapper {
+            height: 92%;
+            overflow: auto;
+        }
+
+        .requeststable {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+            .requeststable tr {
+                border-bottom: 2px solid black;
+            }
+
+            .requeststable td,th {
+                border-right: 1px solid grey;
+                padding-top: 3px;
+                padding-bottom: 3px;
+            }
+
+                .requeststable td:last-of-type {
+                    border-right: none;
+                }
+
+                .requeststable th:last-of-type{
+                    border-right:none;
+                }
+
+            .requeststable button {
+                margin: 3px;
+            }
+
+        .deletealloldbutton {
+            float: right;
+            width: 30%;
+            margin-right: 10%;
+            margin-top: 15px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+        </div>
+    </div>
+    <div class="wrapper">
+    <div class="menubar">
+        <ul class="navigation">
+            <li><a href="/adminpage">Requests management panel</a></li>
+            <li><a href="/adminpage/newspage">News management panel</a></li>
+        </ul>
+    </div>
+    <div class="rules">
+        <div class="text_wrapper">
+            <p>You've logged into the repair request management system. To view detailed information about a request, click the "open" button next to the relevant request. The menu that opens will display all available information about the request, as well as an interface for changing the request status and adding a service center comment.</p>
+            <p>You must schedule repairs for new requests promptly and complete them within the specified deadline. We remind you that, according to our company rules, repairs must be scheduled within 7 days of request creation and completed within 30 days of request creation. Two days before the deadline, the system will warn you, highlighting in red the time of request creation for which the deadline for assigning the appropriate status is about to expire. If you are late scheduling or completing a repair, the system will highlight in red all fields in the request for which the deadline for assigning the appropriate status has expired as a warning.</p>
+            <p>When changing the status of request, you must add a service center comment. When scheduling a repair, you must include the date and time of the repair, as well as the address of our repair facility. If an air conditioner needs repair, specify that the repair will be performed at the customer's home (for privacy reasons, please do not include the customer's address or any other personal information in the comment, as this could be obtained by attackers through brute-force enumeration of request IDs). When the repair is completed, you must indicate the date and location of the repair, as well as a brief description of the problem and how it was resolved.</p>
+            <p>The system provides an option to reject a repair request; however, this option should be used as rarely as possible. A request is typically rejected when it has been incorrectly completed and contains errors in two or more fields (for example, when the reported issue is unclear and the serial number provided does not exist).If only one field contains incorrect or incomplete information, you must contact the person who submitted the request and ask for clarification. If you are unable to obtain the required information, you may reject the request. In such cases, politely advise the customer to submit a new request and clearly explain the mistakes that caused the original request to be rejected.</p>
+            <p>According to the rules, each request must be stored in the system for at least 180 days. After this period, the system will offer to delete requests with the "resolved" and "rejected" statuses, making the "delete" button available next to these requests. The system also offers the option to delete all requests that meet the deletion rules at once. To do this, click the "delete all old requests" button.</p>
+         </div>
+        </div>
+    <div class="content">
+        <form class="selector" id="selector">
+            <p>
+                <span>Sort by:</span>
+                <input type="radio" name="order_by" id="ASC" value="ASC" checked />
+                <span>ascending</span>
+                <input type="radio" name="order_by" id="DESC" value="DESC" />
+                <span>descending</span>
+                <span class="selector_wrapper">
+                <span >Select:</span>
+                <select name="select">
+                    <option value="all" selected>All</option>
+                    <option value="processing">Awaiting processing</option>
+                    <option value="appointed">Repair appointed</option>
+                    <option value="rejected">Rejected</option>
+                    <option value="resolved">Resolved</option>
+                </select>
+                <input type="button" value="Apply" id="submitbutton" />
+                </span>
+            </p>
+         </form>
+        <div class="requeststable_wrapper">
+            <table class="requeststable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>model</th>
+                        <th>S/N</th>
+                        <th>created at</th>
+                        <th>malfunction</th>
+                        <th>status</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody"></tbody>
+            </table>
+
+            <button id="deletealloldbutton" class="deletealloldbutton">Delete all old requests</button>
+        </div>
+    </div>
+    </div>
+    <script>
+        const DEADLINE_FOR_REPAIR_APPOINTMENT = 7;                                //creating constants for the functions that warn about the expiration of the period for assigning a request status and make it possible to delete requests
+        const DEADLINE_FOR_REQUEST_RESOLVING = 30;
+        const DAYS_BEFORE_DEADLINE_FOR_REMINDER = 2;
+        const MONTHS_REQUIRED_BEFORE_REQUEST_DELETING = 6;
+        let tbody = document.getElementById("tbody");                             //getting elements needed for further work by id
+        let selector = document.getElementById("selector");
+        let submitbutton = document.getElementById("submitbutton");
+        let deletealloldbutton = document.getElementById("deletealloldbutton");
+        let current_status = "all";                                               //creation and initialization of variables of the current selected status and the current open request
+        let current_request = undefined;
+
+        function GetRequests(e) {                                                 //function for getting all requests with the selected status
+            while (tbody.firstChild != undefined)
+                tbody.firstChild.remove();                                        //clearing the request table in case of function called again
+
+            let order_by_param = selector.order_by.value;                         //getting status and sorting parameters selected by the user
+            
+            let select = selector.select[selector.select.selectedIndex].value;
+            current_status = select;
+            
+            fetch("/adminpage/getrequests?order_by=" + order_by_param + "&select=" + select, { method: "GET", headers: { "Accept": "application/json" } })     //sending a request to the server to get repair requests with the parameters specified by the user
+                .then(response => {
+                    if (response.ok)
+                        return response.json();
+                    else
+                        return response.json().then(errormessage => { throw errormessage; });
+                })
+                .then(result => {
+                    for (request of result)           
+                        CreateRow(request);                          //calling the function that adds a request to the table for each received request
+                })
+                .catch(error => {
+                    alert("An error occurred while executing your request, information about error: " + error);    //display an error message to the user in case of unsuccessful request sending
+                })
+        }
+        function CreateRow(request) {                           //function for adding a repair request to the table of requests
+            let tr = document.createElement("tr");
+            let td1 = document.createElement("td");
+            let td2 = document.createElement("td");
+            let td3 = document.createElement("td");             //creating elements of a table row 
+            let td4 = document.createElement("td");
+            let td5 = document.createElement("td");
+            let td6 = document.createElement("td");
+            td1.textContent = request.id;
+            td2.textContent = request.model;                    //inserting request data into elements
+            td3.textContent = request.serial_number;
+            td4.textContent = request.created_at;
+
+            if (request.malfunction.length > 55) {
+                td5.textContent = request.malfunction.substring(0, 54) + "...";          //the "malfunction" field has a large allowable length, so only the beginning of it is placed in the table, and the rest of it is truncated
+            }
+            else {
+                td5.textContent = request.malfunction;
+            }
+            td6.textContent = GetStatusDecription(request.status);
+
+            tr.appendChild(td1);                     //adding cells to a table row
+            tr.appendChild(td2);
+            tr.appendChild(td3);
+            tr.appendChild(td4);
+            tr.appendChild(td5);
+            tr.appendChild(td6);
+            tr.setAttribute("id", request.id);                    //setting id for the row for further work with created request
+            let openbutton = document.createElement("button");
+            openbutton.addEventListener("click", () => OpenElement(request.id));  //creating a button to open a request and adding a function to open a request by id
+            openbutton.textContent = "open";
+
+            let deletebutton = document.createElement("button");   //creating a delete request button
+            deletebutton.textContent = "delete";
+             
+            tr.appendChild(openbutton);
+            tr.appendChild(deletebutton);
+            tbody.appendChild(tr);                           //adding the created row to the table
+
+            SetRedRowStatus(request);                        //calling the function to create a warning about expiration of the status change period
+            SetDeleteButtonStatus(request);                  //calling the function for making available deleting of request
+        }
+        function OpenElement(id) {                            //function for opening a request by id
+            fetch("/adminpage/getrequestbyid?id=" + id, { method: "GET", headers: { "Accept": "application/json" } })  //sending a request to the server to get a repair request with the selected id
+                .then(response => {
+                    if (response.ok)
+                        return response.json();
+                    else
+                        return response.json().then(errormessage => { throw errormessage; });
+                })
+                .then(result => {
+                    current_request = result;                   //assigning data of received request to the variable of current open request 
+                    CreateEditPanel();                          //call the function to create the request editing panel
+                })
+                .catch(error => {
+                    alert("An error occurred while executing your request, information about error: " + error);        //display an error message to the user in case of unsuccessful request sending
+                })
+        }
+        function CreateEditPanel() {                               //function to create the request editing panel
+            let EditPanel = document.createElement("div");
+            EditPanel.setAttribute("id", "editpanel");
+            EditPanel.setAttribute("class", "editpanel");          //creating a request editing panel element and setting the corresponding id and class to it
+            let table = document.createElement("table");
+            let tbody = document.createElement("tbody");           //creating internal elements of the request editing panel
+            let tr1 = document.createElement("tr");
+            let td1_1 = document.createElement("td");
+            let td1_2 = document.createElement("td");
+            let tr2 = document.createElement("tr");
+            let td2_1 = document.createElement("td");
+            let td2_2 = document.createElement("td");
+            let tr3 = document.createElement("tr");
+            let td3_1 = document.createElement("td");
+            let td3_2 = document.createElement("td");
+            let tr4 = document.createElement("tr");
+            let td4_1 = document.createElement("td");
+            let td4_2 = document.createElement("td");
+            let p1 = document.createElement("p");
+            let p2 = document.createElement("p");
+            let p3 = document.createElement("p");
+            let p4 = document.createElement("p");
+
+            let h3_1 = document.createElement("h3");
+            let form = document.createElement("form");
+            let f_p1 = document.createElement("p");
+            let span1 = document.createElement("span");
+            let f_p2 = document.createElement("p");
+            let span2 = document.createElement("span");
+            let f_p3 = document.createElement("p");
+            let span3 = document.createElement("span");
+            let radio1 = document.createElement("input");
+            let radio2 = document.createElement("input");
+            let radio3 = document.createElement("input");
+
+            let h3_2 = document.createElement("h3");
+            let f_p4 = document.createElement("p");
+            let textarea = document.createElement("textarea");
+
+            let f_p5 = document.createElement("p");
+            let save_button = document.createElement("button");
+            let reset_button = document.createElement("button");
+
+            let div1 = document.createElement("div");
+            let div2 = document.createElement("div");
+
+            td1_1.textContent = "id: " + current_request.id;                                     //inserting data of the current open request into the elements of the request editing panel
+            td1_2.textContent = "created at: " + current_request.created_at;
+            td2_1.textContent = "model: " + current_request.model;
+            td2_2.textContent = "serial number: " + current_request.serial_number;
+            td3_1.textContent = "customer name: " + current_request.fullname;
+            td3_2.textContent = "purchase date: " + current_request.purchase_date;
+            td4_1.textContent = "phone: " + current_request.phone;
+            td4_2.textContent = "email: " + current_request.email;
+            p1.textContent = "address: " + current_request.address;
+            p2.textContent = "malfunction description: " + current_request.malfunction;
+            p3.textContent = "status: " + GetStatusDecription(current_request.status);
+            if (current_request.service_comment === null) {
+                p4.textContent = "current service center comment: ";
+            }
+            else {
+                p4.textContent = "current service center comment: " + current_request.service_comment;
+            }
+            
+
+            h3_1.textContent = "Change status to:";   
+            form.setAttribute("id", "editform");                 //setting the id for the request editing interface
+            span1.textContent = "Repair appointed";
+            radio1.setAttribute("type", "radio");                //creating labels and setting attributes for elements of the request editing interface
+            radio1.setAttribute("name", "status");
+            radio1.setAttribute("value", "appointed");
+            radio1.setAttribute("checked", "");
+            span2.textContent = "Request rejected";
+            radio2.setAttribute("type", "radio");
+            radio2.setAttribute("name", "status");
+            radio2.setAttribute("value", "rejected");
+            span3.textContent = "Repair completed";
+            radio3.setAttribute("type", "radio");
+            radio3.setAttribute("name", "status");
+            radio3.setAttribute("value", "resolved");
+
+            h3_2.textContent = "Add service center comment:";
+            textarea.setAttribute("name", "service_comment");
+            textarea.setAttribute("rows", "7");
+            textarea.setAttribute("cols", "30");
+            textarea.setAttribute("maxlength", "350");
+            textarea.setAttribute("required", "");
+
+            save_button.textContent = "Save";
+            reset_button.textContent = "Cancel";
+
+            save_button.addEventListener("click", SaveChanges);                //adding a save changes function to the "Save" button
+            reset_button.addEventListener("click", ResetChanges);              //adding a reset function to the "Cancel" button
+
+            tr1.appendChild(td1_1);                                         //adding all created elements to the repair request editing panel
+            tr1.appendChild(td1_2);
+            tr2.appendChild(td2_1);
+            tr2.appendChild(td2_2);
+            tr3.appendChild(td3_1);
+            tr3.appendChild(td3_2);
+            tr4.appendChild(td4_1);
+            tr4.appendChild(td4_2);
+
+            f_p1.appendChild(span1);
+            f_p1.appendChild(radio1);
+            f_p2.appendChild(span2);
+            f_p2.appendChild(radio2);
+            f_p3.appendChild(span3);
+            f_p3.appendChild(radio3);
+            f_p4.appendChild(textarea);
+            f_p5.appendChild(save_button);
+            f_p5.appendChild(reset_button);
+
+            div1.appendChild(h3_1);
+            div1.appendChild(f_p1);
+            div1.appendChild(f_p2);
+            div1.appendChild(f_p3);
+            div2.appendChild(h3_2);
+            div2.appendChild(f_p4);
+
+            form.appendChild(div1);
+            form.appendChild(div2);
+            form.appendChild(f_p5);
+
+            tbody.appendChild(tr1);
+            tbody.appendChild(tr2);
+            tbody.appendChild(tr3);
+            tbody.appendChild(tr4);
+            table.appendChild(tbody);
+
+            EditPanel.appendChild(table);
+            EditPanel.appendChild(p1);
+            EditPanel.appendChild(p2);
+            EditPanel.appendChild(p3);
+            EditPanel.appendChild(p4);
+            EditPanel.appendChild(form);
+            document.body.appendChild(EditPanel);           //adding the repair request editing panel to the page 
+        }
+
+        function SaveChanges(e) {                           //function for saving changes made in the repair request editing panel
+            e.preventDefault();
+            let editform = document.getElementById("editform");        //getting the request editing interface element by id
+
+            if (editform.checkValidity()) {                            //checking the correctness of filling in the interface form
+                let status = editform.status.value;
+                let service_comment = editform.service_comment.value;   //getting a new request status and the entered service center comment
+
+                current_request.status = status;                        //assigning new status and comment values ​​to the properties of the current open request object
+                current_request.service_comment = service_comment;
+
+                fetch("/adminpage/updaterequest", { method: "PUT", body: JSON.stringify(current_request), headers: { "Accept": "application/json", "Content-type": "application/json" } })    //sending a request to the server to update the repair request with the data of the current open request
+                    .then(response => {
+                        if (response.ok)
+                            return response.json();
+                        else
+                            return response.json().then(errormessage => { throw errormessage; });
+                    })
+                    .then(result => {
+                        let request = document.getElementById(result.id);                         //after receiving a response from the server with the updated request data, we find the updated request row element by id
+                        if (result.status === current_status || current_status === "all") {       //if the status of the updated request matches the currently selected status, or if the option to display all requests is selected, update the request data in the table.
+                            let td6 = request.getElementsByTagName("td")[5];
+                            td6.textContent = GetStatusDecription(result.status);                 //seting a new status value
+                            SetRedRowStatus(result);                                              //to evaluate the changes, we call again the function for creating a warning about the expiration of the period for changing the status and the function for setting the possibility of deleting the request
+                            SetDeleteButtonStatus(result);                                        
+                        }
+                        else {
+                            tbody.removeChild(request);                         //if the updated request does not match the current request display criteria, it is removed from the table
+                        }
+                        current_request = undefined;                              //after making changes, reset the variable of the current open request
+                        let editpanel = document.getElementById("editpanel");
+                        document.body.removeChild(editpanel);                    //getting the request editing panel element by ID and remove it
+                    })
+                    .catch(error => {
+                        alert("An error occurred while executing your request, information about error: " + error);   //display an error message to the user in case of unsuccessful request sending
+                    })
+            }
+            else {
+                editform.reportValidity();              //displaying a message to the user about an incorrectly filled in interface form
+            }
+        }
+        function ResetChanges(e) {                                    //function for resetting changes made in the repair request editing panel
+            e.preventDefault();
+            current_request = undefined;                              //resetting the variable of the current open request
+            let editpanel = document.getElementById("editpanel");     //getting an editing panel element by id
+            document.body.removeChild(editpanel);                     //remove the editing panel
+        }
+
+        function SetRedRowStatus(request) {                          //function for creating a warning about the expiration of the deadline for changing the status of a request
+            let tr = document.getElementById(request.id);            //getting the row element of the request being evaluated by id
+            let td4 = tr.getElementsByTagName("td")[3];              //getting by tag name and cell index number the cell element that contains the request creation time
+
+            let date_created_at = new Date(request.created_at);                                             //creating a Date object based on the request creation time for evaluating
+            let time_passed_since_date_of_creation = Math.abs(new Date()) - Math.abs(date_created_at);      //calculating in milliseconds the time elapsed from the creation of the request to the current moment 
+            let date_time_passed_since_date_of_creation = new Date(time_passed_since_date_of_creation);     //creating a new Date object based on the calculated time (this object points to a time that was calculated by adding to the epoch a period equal to the period between the creation of the request and the current moment in time)
+            let date_for_repair_appointment_deadline_comparing = new Date(0);                               //creation of Date objects based on epoch for further comparison of the period that has passed since the request was created with the periods set in constants (all comparisons will be made relative to the epoch)
+            let date_for_request_resolving_deadline_comparing = new Date(0);
+            let date_for_repair_appointment_deadline_reminder_comparing = new Date(0);
+            let date_for_request_resolving_deadline_reminder_comparing = new Date(0);
+
+            date_for_repair_appointment_deadline_comparing.setDate(DEADLINE_FOR_REPAIR_APPOINTMENT + 1);    //setting the Date objects created for time comparison to the periods specified in the constants (thus, each object will point to a time calculated by adding the number of days specified in the constants to the epoch)
+            date_for_request_resolving_deadline_comparing.setDate(DEADLINE_FOR_REQUEST_RESOLVING + 1);      //since the counting starts from the first day of the calendar, one is added to each constant for exact matching
+            date_for_repair_appointment_deadline_reminder_comparing.setDate(DEADLINE_FOR_REPAIR_APPOINTMENT - DAYS_BEFORE_DEADLINE_FOR_REMINDER + 1);
+            date_for_request_resolving_deadline_reminder_comparing.setDate(DEADLINE_FOR_REQUEST_RESOLVING - DAYS_BEFORE_DEADLINE_FOR_REMINDER + 1);
+
+            
+            if (date_time_passed_since_date_of_creation > date_for_repair_appointment_deadline_comparing && request.status === "processing")   //if a request with the "awaiting processing" status has been created for more time than specified in the deadline constant, the entire request line is highlighted in red
+                tr.setAttribute("style", "color:red");
+            else if (date_time_passed_since_date_of_creation > date_for_repair_appointment_deadline_reminder_comparing && request.status === "processing") {
+                if (tr.hasAttribute("style"))
+                    tr.removeAttribute("style");                     //if a request with the "awaiting processing" status has been created for less time than the deadline constant, but the time remaining until the deadline is less than the deadline warning period, then if the entire line is highlighted in red, highlighting is removed
+                td4.setAttribute("style", "color:red");              //and the cell with the time of request creation is highlighted in red
+            }
+            else if (request.status === "processing") {              //if the time since creation of a request with the "awaiting processing" status is less than the deadline constant, and the time remaining until the deadline is greater than the deadline warning period, then the red highlighting of the entire row or cell with the creation time is removed, if present
+                if (tr.hasAttribute("style"))
+                    tr.removeAttribute("style");
+                if (td4.hasAttribute("style"))
+                    td4.removeAttribute("style");
+            }
+                
+
+            if (date_time_passed_since_date_of_creation > date_for_request_resolving_deadline_comparing && request.status === "appointed")    //requests with the "repair appointed" status are subject to the same logic as requests with the "awaiting processing" status
+                tr.setAttribute("style", "color:red");
+            else if (date_time_passed_since_date_of_creation > date_for_request_resolving_deadline_reminder_comparing && request.status === "appointed") {
+                if (tr.hasAttribute("style"))
+                    tr.removeAttribute("style");
+                td4.setAttribute("style", "color:red");
+            }
+            else if (request.status === "appointed") {
+                if (tr.hasAttribute("style"))
+                    tr.removeAttribute("style");
+                if (td4.hasAttribute("style"))
+                    td4.removeAttribute("style");
+            }
+
+            if (request.status === "resolved" || request.status === "rejected") {        //for requests with the status "resolved" and "rejected" there are no warnings about the expiration of the period for changing the status
+                if (tr.hasAttribute("style"))                                            //therefore, such request are checked for the presence of red highlighting of the entire row or cell with the creation time
+                    tr.removeAttribute("style");                                         //if highlighting is present, it is removed
+                if (td4.hasAttribute("style"))
+                    td4.removeAttribute("style");
+            }
+        }
+
+        function SetDeleteButtonStatus(request) {                             //function to set the possibility to delete a request
+            let tr = document.getElementById(request.id);
+            let deletebutton = tr.getElementsByTagName("button")[1];          //getting the request delete button by tag and index
+
+            let date_created_at = new Date(request.created_at);      // creating a Date object based on the time the request was created
+            date_created_at.setHours(0);                             // To match the Datediff() function in MySQL, the hours, minutes, and seconds are set to zero, since the Datediff() function only takes into account the number of days that have passed
+            date_created_at.setMinutes(0);
+            date_created_at.setSeconds(0);
+            let time_passed_since_date_of_creation = Math.abs(new Date()) - Math.abs(date_created_at);       //getting the time in milliseconds from the moment the request was created to the current moment
+            let date_time_passed_since_date_of_creation = new Date(time_passed_since_date_of_creation);      //creating a new Date object based on the calculated time (this object will point to the time calculated by adding to the epoch a period equal to the period from the moment the request was made to the current moment in time)
+            let date_for_requirement_for_deleting_comparing = new Date(0);                                   //creating a Date object based on the epoch for further comparison
+            date_for_requirement_for_deleting_comparing.setMonth(MONTHS_REQUIRED_BEFORE_REQUEST_DELETING);   //setting the created object the value of the month specified in the constant (thus the object will point to the time calculated by adding the number of months specified in the constant to the epoch)
+            
+            if (date_time_passed_since_date_of_creation > date_for_requirement_for_deleting_comparing && (request.status === "resolved" || request.status === "rejected")) {     //if more time has passed since the request was created than is specified in the constant, and the request status is "resolved" or "rejected", then the request becomes available for deletion
+                if (deletebutton.hasAttribute("disabled"))
+                    deletebutton.removeAttribute("disabled");                                  //if the delete button previously had an attribute set that made it unclickable, it is removed     
+                deletebutton.addEventListener("click", () => DeleteRequest(request.id));       //adding a function that deletes a request by id to the delete button
+            }
+            else
+                deletebutton.setAttribute("disabled", "");                                     //if the request does not meet the criteria for availability for deletion, then the delete button is made unavailable for clicking by setting the attribute
+        }
+
+        function DeleteRequest(id) {                                               //function to delete a request by id
+            const confirmation = confirm("Delete request with id "+id+"?");           //displaying a message to the user asking whether to delete the request and receiving confirmation or refusal from the user
+            if (confirmation === true) {                                           //if confirmed, deletion is performed
+                fetch("/adminpage/deleterequest?id=" + id, { method: "DELETE", headers: { "Accept": "application/json" } })      //sending a request to the server to delete a repair request with the specified id
+                    .then(response => {
+                        if (response.ok)
+                            return response.json();
+                        else
+                            return response.json().then(errormessage => { throw errormessage; });
+                    })
+                    .then(result_id => {                                         //in case of successful deletion, the server sends the id of the deleted request
+                        
+                        let request = document.getElementById(result_id);        //getting a deleted request row element by id    
+                        tbody.removeChild(request);                              //removing request from the table
+                    })
+                    .catch(error => {
+                        alert("An error occurred while executing your request, information about error: " + error);        //display an error message to the user in case of unsuccessful request sending
+                    })
+            }
+            
+        }
+
+        function DeleteAllOldRequest(e) {                //function for deleting all requests that meet the deletion criteria (requests for which more time has passed since their creation than is set by the rules, and whose status is "resolved" or "rejected")
+            e.preventDefault();
+            let confirmation = confirm("Are you sure you want to delete all old requests?");        //displaying a message to the user asking whether to delete all old requests and receiving confirmation or refusal from the user
+            if (confirmation === true) {                                                             //if confirmed, deletion of requests is performed
+                fetch("/adminpage/deletealloldrequests", { method: "DELETE", headers: { "Accept": "application/json" } })     //sending a request to the server to delete all old repair requests
+                    .then(response => {
+                        if (response.ok)
+                            return response.json();
+                        else
+                            return response.json().then(errormessage => { throw errormessage; });
+                    })
+                    .then(result => {                                                       //if the deletion is successful, the server returns an array containing the ids of all deleted requests
+                        
+                        if (result.length === 0)                                            //if the array length is zero, the user is shown a message about the absence of deleted requests
+                            alert("No requests were deleted");
+                        else {                                                              //if the array length is not zero, then all requests are deleted from the table
+                            let count_of_deleted_requests = result.length;
+                            for (id of result) {                                            
+                                let request = document.getElementById(id);
+                                if (request != undefined)                                   //before deleting a request, a check is made to ensure that request was found by id, because if the user, at the time of deletion, chose to display requests by a certain status, then some of the deleted requests may not be displayed in the table
+                                tbody.removeChild(request);
+                            }
+                            alert(count_of_deleted_requests + " requests were deleted");     //display a message to the user about the total number of deleted requests
+                        }
+                    })
+                    .catch(error => {
+                        alert("An error occurred while executing your request, information about error: " + error);                //display an error message to the user in case of unsuccessful request sending
+                    })
+            }
+        }
+        function GetStatusDecription(status) {              //function to decode the request status for display to the user
+            if (status === "processing")
+                return "awaiting processing";
+            else if (status === "appointed")
+                return "repair appointed";
+            else if (status === "rejected")
+                return "rejected";
+            else if (status === "resolved")
+                return "resolved";
+            else
+                return "error";
+        }
+        deletealloldbutton.addEventListener("click", DeleteAllOldRequest);            //adding a function for deleting all old requests to the delete all old requests button
+        submitbutton.addEventListener("click", GetRequests);                          //adding a function to the "Apply" button to get all requests with the selected status
+        GetRequests();                                                                //call the function to get all requests with the selected status to display requests to the user when the page is opened
+    </script>
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>News page</title>
+    <link rel="stylesheet" type="text/css" href="frame.css" />
+    <link rel="stylesheet" type="text/css" href="warranty_promotion_animation.css" />
+    <style>
+        .news_wrapper{
+            height:100%;
+            overflow:auto;
+        }
+        .news_wrapper small{
+            float:left;
+        }
+        .news_wrapper h3{
+            text-align:center;
+        }
+            .news_wrapper h3, div, p {
+                margin: revert;
+                padding: revert;
+                border: revert;
+            }
+            .news_wrapper div{
+                border-bottom:2px solid black;
+            }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+        </div>
+    </div>
+    <div class="wrapper">
+    <div class="menubar">
+        <ul class="navigation">
+            <li><a href="mainpage">Main page</a></li>
+            <li><a href="requestpage">Request for repair</a></li>
+            <li><a href="statuspage">Request status</a></li>
+            <li><a href="newspage">News</a></li>
+            <li><a href="aboutpage">About us</a></li>
+        </ul>
+    </div>
+    <div class="slidebar">
+        <div>
+        </div>
+    </div>
+    <div class="content">
+        <div id="news_wrapper" class="news_wrapper"></div>
+    </div>
+    </div>
+    <script>
+        let news_wrapper = document.getElementById("news_wrapper");              //getting by id element for displaying publications
+
+        function GetAllNews() {                                             //function to get all publications
+            fetch("/getallnews", { method: "GET", headers: { "Accept": "application/json" } })     //sending a request to the server to get all publications
+                .then(response => {
+                    if (response.ok)
+                        return response.json();
+                    else
+                        return response.json().then(errormessage => { throw errormessage; });
+                })
+                .then(result => {
+                    if (result.length === 0) {                                 //if the request is successfully completed, but the received array does not contain publications, the user is shown a message about the absence of news
+                        let h3 = document.createElement("h3");
+                        h3.textContent = "Currently there is no news";
+                        news_wrapper.appendChild(h3);
+                    }
+                    else {
+                        for (article of result) {                              //otherwise, each publication is displayed to the user
+                            let div = document.createElement("div");
+                            let h3 = document.createElement("h3");
+                            let p = document.createElement("p");               //creating elements to display the article
+                            let small = document.createElement("small");
+
+                            h3.textContent = article.title;                    //entering article data into elements
+                            p.textContent = article.content;
+                            small.textContent = new Date(article.created_at).toLocaleDateString();
+                            
+
+                            div.appendChild(small);
+                            div.appendChild(h3);
+                            div.appendChild(p);
+
+                            news_wrapper.appendChild(div);                     //adding an article to an element for displaying publications
+                        }
+                    }
+                })
+                .catch(error => {
+                    alert("An error occurred while executing your request, information about error" + error);           //display an error message to the user in case of unsuccessful request sending
+                })
+        }
+
+        GetAllNews();          //call the function to get all publications to display publications to the user when the page is opened
+    </script>
+</body>
+</html>

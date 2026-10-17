@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Request page</title>
+    <link rel="stylesheet" type="text/css" href="frame.css" />
+    <link rel="stylesheet" type="text/css" href="warranty_promotion_animation.css" />
+    <style>
+        .content h2, form, p {
+            margin: revert;
+            padding: revert;
+            border: revert;
+        }
+
+        .content h2{
+            text-align:center;
+        }
+
+        .requestform input, textarea {
+            float: right;
+            width: 65%;
+            margin-right: 15%;
+        }
+
+        .requestform button {
+            float: right;
+            clear: both;
+            width: 30%;
+            margin-top: 10px;
+            margin-right: 33%;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+        </div>
+    </div>
+    <div class="wrapper">
+    <div class="menubar">
+        <ul class="navigation">
+            <li><a href="mainpage">Main page</a></li>
+            <li><a href="requestpage">Request for repair</a></li>
+            <li><a href="statuspage">Request status</a></li>
+            <li><a href="newspage">News</a></li>
+            <li><a href="aboutpage">About us</a></li>
+        </ul>
+    </div>
+    <div class="slidebar">
+        <div>
+        </div>
+    </div>
+    <div class="content">
+        <h2>Fill in the repair request form</h2>
+        <form id="requestform" class="requestform">
+            <fieldset>
+            <p>
+                <label for="fullname">Full name:</label>
+                <input type="text" id="fullname" name="fullname" maxlength="50" required/>
+            </p>
+            <p>
+                <label for="phone">Phone:</label>
+                <input type="tel" id="phone" name="phone" maxlength="20" pattern="\+?\d+-?\d+-?\d+-?\d+-?\d+-?\d+" required/>
+            </p>
+            <p>
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" maxlength="60" required/>
+            </p>
+            <p>
+                <label for="model">Model:</label>
+                <input type="text" id="model" name="model" maxlength="15" required/>
+            </p>
+            <p>
+                <label for="serial_number">Serial number (S/N):</label>
+                <input type="text" id="serial_number" name="serial_number" minlength="3" maxlength="15" required/>
+            </p>
+            <p>
+                <label for="purchase_date">Purchase date:</label>
+                <input type="date" id="purchase_date" name="purchase_date" required/>
+            </p>
+            <p>
+                <label for="address">Your address:</label>
+                <input type="text" id="address" name="address" maxlength="150" required/>
+            </p>
+            <p>
+                <label for="malfunction">Describe malfunction:</label>
+                <textarea rows="7" cols="38" id="malfunction" name="malfunction" maxlength="1000" required></textarea>
+            </p>
+            <p>
+                <button id="submitbutton" type="submit">Submit repair request</button>
+            </p>
+             </fieldset>
+        </form>
+    </div>
+    </div>
+    <script>
+        let requestform = document.getElementById("requestform");            //getting elements needed for further work by id
+        let submitbutton = document.getElementById("submitbutton");
+
+        function CreateRequest(e) {                                          //function for creating a repair request
+            e.preventDefault();
+            if (requestform.checkValidity()) {                               //checking the correctness of the entered data in the request form
+                let request = {
+                    id: 0,
+                    fullname: requestform.fullname.value,                    //getting data from a form and creating an object of request
+                    phone: requestform.phone.value,
+                    email: requestform.email.value,
+                    model: requestform.model.value,
+                    serial_number: requestform.serial_number.value,
+                    purchase_date: requestform.purchase_date.value,
+                    address: requestform.address.value,
+                    malfunction: requestform.malfunction.value,
+                    created_at: new Date(),
+                    status: "processing",
+                    service_comment: undefined
+
+                }
+                fetch("/createrequest", { method: "POST", body: JSON.stringify(request), headers: { "Accept": "application/json", "Content-type": "application/json" } })   //sending the created repair request to the server
+                    .then(respone => {
+                        if (respone.ok)
+                            return respone.json();
+                        else
+                            return respone.json().then(errormessage => { throw errormessage; });
+                    })
+                    .then(result => {
+                        alert("Your request was submitted sucesfully, request id is: " + result.id + " (save it for future request status checks)");    //message to the user with the id of request in case of successful sending
+                        requestform.reset();
+                    })
+                    .catch(error => {
+                        alert("An error occurred while executing your request, information about error: " + error);      //display an error message to the user in case of unsuccessful sending
+                    })
+                    
+            }
+            else {
+                requestform.reportValidity();                               //displaying a message to the user about an incorrectly filled in request form
+            }
+
+        }
+        submitbutton.addEventListener("click", CreateRequest);      //adding a creating repair request function to the submit button
+    </script>
+</body>
+</html>
